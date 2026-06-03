@@ -205,6 +205,18 @@ pub fn parse_timestamp_from_string(input: &str) -> Result<DateTime<Local>, Strin
         }
     }
 
+    if let Some((timestamp_without_tz, timezone)) = input.rsplit_once(' ')
+        && timezone.chars().all(|ch| ch.is_ascii_alphabetic())
+    {
+        for format in &naive_formats {
+            if let Ok(naive_dt) = NaiveDateTime::parse_from_str(timestamp_without_tz, format)
+                && let Some(local_dt) = Local.from_local_datetime(&naive_dt).single()
+            {
+                return Ok(local_dt);
+            }
+        }
+    }
+
     Err(format!("Unable to parse timestamp: '{input}'"))
 }
 
@@ -312,6 +324,9 @@ mod tests {
         // println!("Result no millis: {}", result_no_millis);
         assert_eq!(result_no_millis.year(), 2025);
         assert_eq!(result_no_millis.month(), 5);
+
+        let result_cst = parse_timestamp_from_string("2026-06-03 09:57:04.120291 CST").unwrap();
+        assert_eq!(result_cst.year(), 2026);
 
         let result_offset = parse_timestamp_from_string("2026-06-03 10:15:01.123 +0800").unwrap();
         assert_eq!(result_offset.year(), 2026);
