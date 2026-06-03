@@ -70,10 +70,10 @@ impl Aggregator for TopSlowQueries {
         let mut items: Vec<_> = self.heap.drain().collect();
         items.sort_by_key(|Reverse((d, _))| *d);
 
-        println!("Top {} slowest queries:", items.len());
+        crate::outln!("Top {} slowest queries:", items.len());
         for Reverse((duration, record)) in items.into_iter().rev() {
-            println!("--- {duration:?} ---");
-            println!("{}", unsafe { std::str::from_utf8_unchecked(&record) });
+            crate::outln!("--- {duration:?} ---");
+            crate::outln!("{}", unsafe { std::str::from_utf8_unchecked(&record) });
         }
     }
 

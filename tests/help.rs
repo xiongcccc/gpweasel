@@ -15,6 +15,18 @@ fn base_help_with_options() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
+fn base_help_contains_page_size() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::new(cargo::cargo_bin!("gpweasel"));
+
+    cmd.arg("--help")
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("--page-size"));
+
+    Ok(())
+}
+
+#[test]
 fn errors_command_help() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::new(cargo::cargo_bin!("gpweasel"));
 

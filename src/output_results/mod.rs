@@ -194,7 +194,7 @@ fn filter_record(
     )?;
 
     if print {
-        println!("{text}");
+        crate::outln!("{text}");
     }
     Ok(())
 }

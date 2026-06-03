@@ -142,38 +142,38 @@ impl Aggregator for ConnectionsAggregator {
     }
 
     fn print(&mut self) {
-        println!(
+        crate::outln!(
             "Total connection attempts: {}",
             self.total_connection_attempts
         );
-        println!(
+        crate::outln!(
             "Total authenticated connections: {}",
             self.total_authenticated
         );
-        println!(
+        crate::outln!(
             "Total authenticated SSL connections: {}",
             self.total_authenticated_ssl
         );
-        println!("Total connection failures: {}", self.connection_failures);
-        println!("Connections by host:");
+        crate::outln!("Total connection failures: {}", self.connection_failures);
+        crate::outln!("Connections by host:");
         for (host, count) in &self.connections_by_host {
-            println!("  {count:>6}  {host}");
+            crate::outln!("  {count:>6}  {host}");
         }
-        println!("Connections by database:");
+        crate::outln!("Connections by database:");
         for (db, count) in &self.connections_by_database {
-            println!("  {count:>6}  {db}");
+            crate::outln!("  {count:>6}  {db}");
         }
-        println!("Connections by user:");
+        crate::outln!("Connections by user:");
         for (user, count) in &self.connections_by_user {
-            println!("  {count:>6}  {user}");
+            crate::outln!("  {count:>6}  {user}");
         }
-        println!("Connections by application name:");
+        crate::outln!("Connections by application name:");
         for (appname, count) in &self.connections_by_appname {
-            println!("  {count:>6}  {appname}");
+            crate::outln!("  {count:>6}  {appname}");
         }
-        println!("Connections by time bucket:");
+        crate::outln!("Connections by time bucket:");
         for (appname, count) in &self.connection_attempts_by_time_bucket {
-            println!("  {count:>6}  {appname}");
+            crate::outln!("  {count:>6}  {appname}");
         }
     }
 

@@ -59,6 +59,7 @@ mod duration;
 mod error;
 mod filters;
 mod format;
+mod output;
 mod output_results;
 mod severity;
 mod util;
@@ -68,6 +69,7 @@ pub use self::error::{Error, Result};
 fn main() -> Result<()> {
     let cli = cli::cli();
     let matches = cli.clone().get_matches();
+    output::init(matches.get_one::<usize>("page-size").copied());
 
     let mut converted_args: ConvertedArgs = ConvertedArgs::parse_from_matches(matches.clone())?;
     converted_args = converted_args.expand_dirs()?.expand_archives()?;

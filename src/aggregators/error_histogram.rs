@@ -72,7 +72,7 @@ impl Aggregator for ErrorHistogramAggregator {
 
             let time = Local.timestamp_opt(bucket, 0).single();
             if let Some(time) = time {
-                println!(
+                crate::outln!(
                     "[{}] {}{} {}",
                     time.format("%Y-%m-%d %H:%M:%S"),
                     "#".repeat(filled),

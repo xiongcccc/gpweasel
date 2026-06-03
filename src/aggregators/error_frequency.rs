@@ -70,9 +70,9 @@ impl Aggregator for ErrorFrequencyAggregator {
         // Sort descending by frequency
         entries.sort_by(|a, b| b.1.cmp(a.1));
 
-        println!("Most frequent error messages:");
+        crate::outln!("Most frequent error messages:");
         for (msg, count) in entries {
-            println!("{count:>6}  {msg}");
+            crate::outln!("{count:>6}  {msg}");
         }
     }
 
