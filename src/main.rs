@@ -148,9 +148,10 @@ fn main() -> Result<()> {
             error!("Not implemented");
         }
         Some(("slow", sub_matches)) => {
-            if let Some(("top", _)) = sub_matches.subcommand() {
+            if let Some(("top", top_subcommand)) = sub_matches.subcommand() {
+                let limit = *top_subcommand.get_one::<usize>("max").unwrap_or(&10);
                 debug!("Using TopSlowQueryAggregator");
-                aggregators.push(Box::new(TopSlowQueries::new(10)));
+                aggregators.push(Box::new(TopSlowQueries::new(limit)));
                 converted_args.print_details = false;
                 output_results(converted_args, Severity::Log, &mut aggregators, &filters)?;
             } else {

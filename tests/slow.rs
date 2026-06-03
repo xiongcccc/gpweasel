@@ -54,6 +54,19 @@ fn aggregate_top_slow() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
+fn aggregate_top_slow_with_max() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::new(cargo::cargo_bin!("gpweasel"));
+
+    cmd.args(["slow", "top", "--max", "1", "./tests/files/duration.log"])
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("Top 1 slowest queries:"))
+        .stdout(predicates::str::contains("--- 25.761ms ---"));
+
+    Ok(())
+}
+
+#[test]
 fn aggregate_top_slow_with_filter() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::new(cargo::cargo_bin!("gpweasel"));
 
