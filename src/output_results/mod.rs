@@ -20,6 +20,8 @@ pub fn output_results(
     filters: &Vec<Box<dyn Filter>>,
 ) -> Result<()> {
     let min_severity_num: i32 = min_severity.into();
+    let aggregator_templates: Vec<Box<dyn Aggregator>> =
+        aggregators.iter().map(|a| a.boxed_clone()).collect();
 
     for file_with_path in converted_args.files {
         if converted_args.verbose {
@@ -84,7 +86,7 @@ pub fn output_results(
             .par_iter()
             .map(|range| -> Result<Vec<Box<dyn Aggregator>>> {
                 let mut local_aggregators: Vec<Box<dyn Aggregator>> =
-                    aggregators.iter().map(|a| a.boxed_clone()).collect();
+                    aggregator_templates.iter().map(|a| a.boxed_clone()).collect();
 
                 let slice = &bytes[range.clone()];
 
@@ -129,11 +131,13 @@ pub fn output_results(
                 aggregators[i].merge_box(aggregator.as_ref());
             }
         }
-        for agg in &mut *aggregators {
-            agg.print();
-        }
         debug!("Finished aggregating in: {:?}", timing.elapsed());
     }
+
+    for agg in &mut *aggregators {
+        agg.print();
+    }
+
     Ok(())
 }
 
