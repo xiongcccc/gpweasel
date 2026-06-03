@@ -39,7 +39,7 @@ impl Format {
         .ok_or("Missing timestamp")?;
 
         let timestamp = std::str::from_utf8(timestamp).map_err(|err| err.to_string())?;
-        parse_timestamp_from_string(timestamp)
+        Ok(parse_timestamp_from_string(timestamp)?)
     }
 
     pub fn message_from_bytes<'a>(&self, record: &'a [u8]) -> Option<&'a [u8]> {
