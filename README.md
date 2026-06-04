@@ -1,5 +1,7 @@
 # gpweasel
 
+[中文](README.md) | [English](README.en.md)
+
 `gpweasel` 是一个面向 DBA 和运维人员的 Greenplum Database / YMatrix 日志解析 CLI 工具。它参考了 PostgreSQL 生态中 `pgweasel` 的思路，但针对 Greenplum/YMatrix 的 `gpdb-*.csv` 日志格式做了适配。
 
 它的目标不是生成 HTML 报告，而是在数据库服务器上直接对现有日志做快速排查：
