@@ -77,3 +77,28 @@ fn slow_command_help_contains_subcommand_top() -> Result<(), Box<dyn std::error:
 
     Ok(())
 }
+
+#[test]
+fn peaks_command_help_contains_bucket_and_max() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::new(cargo::cargo_bin!("gpweasel"));
+
+    cmd.args(["peaks", "--help"])
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("--bucket"))
+        .stdout(predicates::str::contains("--max"));
+
+    Ok(())
+}
+
+#[test]
+fn stats_command_help_accepts_files() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::new(cargo::cargo_bin!("gpweasel"));
+
+    cmd.args(["stats", "--help"])
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("gpweasel stats <PATH>..."));
+
+    Ok(())
+}

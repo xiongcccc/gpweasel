@@ -126,6 +126,22 @@ fn greenplum_csv_error_filter() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
+fn greenplum_csv_error_in_log_file_uses_csv_severity()
+    -> Result<(), Box<dyn std::error::Error>>
+{
+    let mut cmd = Command::new(cargo::cargo_bin!("gpweasel"));
+
+    cmd.args(["err", "./tests/files/gpdb_error_like.log"])
+        .assert()
+        .success()
+        .stdout(predicates::str::contains(
+            "syntax error at or near \"\"select\"\"",
+        ));
+
+    Ok(())
+}
+
+#[test]
 fn greenplum_csv_error_top() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::new(cargo::cargo_bin!("gpweasel"));
 

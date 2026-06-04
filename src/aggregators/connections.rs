@@ -6,15 +6,15 @@ use crate::{aggregators::Aggregator, error::Result, format::Format, severity::Se
 
 #[derive(Clone, Debug, Default)]
 pub struct ConnectionsAggregator {
-    total_connection_attempts: u16,
-    total_authenticated: u16,
-    total_authenticated_ssl: u16,
-    connection_failures: u16,
-    connections_by_host: HashMap<String, u16>,
-    connections_by_database: HashMap<String, u16>,
-    connections_by_user: HashMap<String, u16>,
-    connections_by_appname: HashMap<String, u16>,
-    connection_attempts_by_time_bucket: HashMap<String, u16>,
+    total_connection_attempts: u64,
+    total_authenticated: u64,
+    total_authenticated_ssl: u64,
+    connection_failures: u64,
+    connections_by_host: HashMap<String, u64>,
+    connections_by_database: HashMap<String, u64>,
+    connections_by_user: HashMap<String, u64>,
+    connections_by_appname: HashMap<String, u64>,
+    connection_attempts_by_time_bucket: HashMap<String, u64>,
     bucket_interval: Duration,
 }
 
@@ -43,11 +43,6 @@ impl Aggregator for ConnectionsAggregator {
         severity: Severity,
         log_time: DateTime<Local>,
     ) -> Result<()> {
-        let message =
-            fmt.message_from_bytes(record)
-                .ok_or(crate::Error::NotAbleToExtractMessage {
-                    record: String::from_utf8(record.to_vec()).unwrap(),
-                })?;
         if (severity == Severity::Fatal)
             && (memchr::memmem::find(record, b"password authentication failed").is_some()
                 || memchr::memmem::find(record, b"is not permitted to log in").is_some())
@@ -59,6 +54,10 @@ impl Aggregator for ConnectionsAggregator {
         if severity != Severity::Log {
             return Ok(());
         }
+
+        let Some(message) = fmt.message_from_bytes(record) else {
+            return Ok(());
+        };
 
         if message.starts_with(b"connection received:") {
             self.total_connection_attempts += 1;
@@ -156,23 +155,23 @@ impl Aggregator for ConnectionsAggregator {
         );
         crate::outln!("Total connection failures: {}", self.connection_failures);
         crate::outln!("Connections by host:");
-        for (host, count) in &self.connections_by_host {
+        for (host, count) in sorted_counts(&self.connections_by_host) {
             crate::outln!("  {count:>6}  {host}");
         }
         crate::outln!("Connections by database:");
-        for (db, count) in &self.connections_by_database {
+        for (db, count) in sorted_counts(&self.connections_by_database) {
             crate::outln!("  {count:>6}  {db}");
         }
         crate::outln!("Connections by user:");
-        for (user, count) in &self.connections_by_user {
+        for (user, count) in sorted_counts(&self.connections_by_user) {
             crate::outln!("  {count:>6}  {user}");
         }
         crate::outln!("Connections by application name:");
-        for (appname, count) in &self.connections_by_appname {
+        for (appname, count) in sorted_counts(&self.connections_by_appname) {
             crate::outln!("  {count:>6}  {appname}");
         }
         crate::outln!("Connections by time bucket:");
-        for (appname, count) in &self.connection_attempts_by_time_bucket {
+        for (appname, count) in sorted_counts(&self.connection_attempts_by_time_bucket) {
             crate::outln!("  {count:>6}  {appname}");
         }
     }
@@ -184,6 +183,12 @@ impl Aggregator for ConnectionsAggregator {
     fn as_any(&self) -> &dyn Any {
         self
     }
+}
+
+fn sorted_counts(map: &HashMap<String, u64>) -> Vec<(&String, &u64)> {
+    let mut entries: Vec<_> = map.iter().collect();
+    entries.sort_by(|a, b| b.1.cmp(a.1).then_with(|| a.0.cmp(b.0)));
+    entries
 }
 
 fn local_datetime_to_u128(dt: DateTime<Local>) -> Result<u128> {

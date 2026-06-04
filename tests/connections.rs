@@ -27,3 +27,17 @@ fn greenplum_connection_aggregate() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn greenplum_csv_record_in_log_file_is_skipped_when_not_connection()
+    -> Result<(), Box<dyn std::error::Error>>
+{
+    let mut cmd = Command::new(cargo::cargo_bin!("gpweasel"));
+
+    cmd.args(["conn", "./tests/files/gpdb_startup_like.log"])
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("Connections by host:"));
+
+    Ok(())
+}

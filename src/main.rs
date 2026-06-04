@@ -17,12 +17,12 @@
 //!    - [x] top
 //!    - [x] histogram
 //!  - [x] locks
-//!  - [ ] peaks
+//!  - [x] peaks
 //!  - [x] slow
 //!   - [x] filter by threshold
 //!   - [x] top slow queries
 //!   - [ ] stat
-//!  - [ ] stats
+//!  - [x] stats
 //!  - [x] system
 //!  - [x] connections
 
@@ -44,7 +44,7 @@ use log::{debug, error};
 use crate::{
     aggregators::{
         Aggregator, ConnectionsAggregator, ErrorFrequencyAggregator, ErrorHistogramAggregator,
-        TopSlowQueries,
+        PeaksAggregator, StatsAggregator, TopSlowQueries,
     },
     convert_args::ConvertedArgs,
     filters::{Filter, FilterSlow},
@@ -146,8 +146,20 @@ fn main() -> Result<()> {
             converted_args.print_details = false;
             output_results(converted_args, Severity::Log, &mut aggregators, &filters)?;
         }
-        Some(("peaks" | "stats", _)) => {
-            error!("Not implemented");
+        Some(("peaks", peaks_subcommand)) => {
+            let limit = *peaks_subcommand.get_one::<usize>("max").unwrap_or(&20);
+            let mut interval = Duration::from_mins(10);
+            if let Some(interval_str) = peaks_subcommand.get_one::<String>("bucket") {
+                interval = parse_duration(interval_str)?;
+            }
+            aggregators.push(Box::new(PeaksAggregator::new(interval, limit)));
+            converted_args.print_details = false;
+            output_results(converted_args, Severity::Debug5, &mut aggregators, &filters)?;
+        }
+        Some(("stats", _)) => {
+            aggregators.push(Box::new(StatsAggregator::new()));
+            converted_args.print_details = false;
+            output_results(converted_args, Severity::Debug5, &mut aggregators, &filters)?;
         }
         Some(("slow", sub_matches)) => {
             if let Some(("top", top_subcommand)) = sub_matches.subcommand() {

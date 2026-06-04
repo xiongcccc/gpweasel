@@ -9,6 +9,8 @@ The goal is direct server-side triage: copy or build one binary, point it at exi
 * Which SQL statements were slowest?
 * Did we have lock waits or lock timeouts?
 * How many connections came from each host, database, or user?
+* Which time windows were the busiest?
+* What is the high-level health summary for a log set?
 * What system events, reloads, checkpoints, startup, or extension events happened?
 
 ## Supported Log Format
@@ -40,6 +42,8 @@ Greenplum CSV fields used by `gpweasel` include:
 * field 19: `event_message`
 
 PostgreSQL CSV/plain logs remain partially supported for compatibility with the original parser.
+
+Some Greenplum/YMatrix startup files can be named `startup.log` while still using CSV-style fields. `gpweasel` detects those rows when extracting severity, message, host, user, and database fields, so broad globs such as `$MASTER_DATA_DIRECTORY/log/*` are supported.
 
 ## Build And Install
 
@@ -212,6 +216,35 @@ ALTER SYSTEM SET log_disconnections = on;
 SELECT pg_reload_conf();
 ```
 
+### peaks
+
+Show the busiest time buckets by log volume. This is useful for quickly finding incident windows before drilling into `errors`, `slow`, or `locks`.
+
+```sh
+gpweasel peaks $MASTER_DATA_DIRECTORY/log/*
+gpweasel peaks --bucket 1m --max 10 $MASTER_DATA_DIRECTORY/log/*
+gpweasel -b 2h peaks --bucket 5m --max 20 $MASTER_DATA_DIRECTORY/log/*
+```
+
+Options:
+
+```sh
+-b, --bucket <INTERVAL>  Bucket width, for example 10s, 1m, 10m, 1h. Default: 10m
+-m, --max <MAX>         Max number of busiest buckets to show. Default: 20
+```
+
+### stats
+
+Print a compact summary for a log set: total records, severity counts, duration record count, max duration, connection counts, lock-related count, missing user/database/host field counts, and top users/databases/hosts.
+
+```sh
+gpweasel stats $MASTER_DATA_DIRECTORY/log/*
+gpweasel -m "2026-06-03 18" stats $MASTER_DATA_DIRECTORY/log/*
+gpweasel -b today stats $MASTER_DATA_DIRECTORY/log/*
+```
+
+This command is intended as the first DBA/operator glance over a log set. It does not print SQL text or individual records, so it is safe to run over broader log globs before narrowing the time window.
+
 ### system
 
 Show lifecycle and internal events, such as startup, shutdown, reload, checkpoints, background workers, extensions, replication, and WAL-related messages.
@@ -274,6 +307,8 @@ gpweasel -m "YYYY-MM-DD HH:MM" errors top $MASTER_DATA_DIRECTORY/log/gpdb-*.csv
 gpweasel -m "YYYY-MM-DD HH:MM" slow top --max 3 $MASTER_DATA_DIRECTORY/log/gpdb-*.csv
 gpweasel -m "YYYY-MM-DD HH:MM" locks $MASTER_DATA_DIRECTORY/log/gpdb-*.csv
 gpweasel -m "YYYY-MM-DD HH:MM" connections $MASTER_DATA_DIRECTORY/log/gpdb-*.csv
+gpweasel -m "YYYY-MM-DD HH:MM" peaks --bucket 1m --max 5 $MASTER_DATA_DIRECTORY/log/*
+gpweasel -m "YYYY-MM-DD HH:MM" stats $MASTER_DATA_DIRECTORY/log/*
 ```
 
 ## Troubleshooting

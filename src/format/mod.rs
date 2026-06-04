@@ -27,14 +27,24 @@ impl Format {
     pub fn severity_from_string(&self, text: &str) -> Severity {
         match self {
             Format::Csv => crate::format::csv::severity(text.as_bytes()),
-            Format::Plain => Severity::from_log_string(text),
+            Format::Plain => {
+                let severity = Severity::from_log_string(text);
+                if severity == Severity::Log {
+                    crate::format::csv::severity(text.as_bytes())
+                } else {
+                    severity
+                }
+            }
         }
     }
 
     pub fn timestamp_from_bytes(&self, record: &[u8]) -> Result<DateTime<Local>> {
         let timestamp = match self {
             Format::Csv => crate::format::csv::timestamp(record),
-            Format::Plain => crate::format::plain::timestamp(record),
+            Format::Plain => {
+                crate::format::plain::timestamp(record)
+                    .or_else(|| crate::format::csv::timestamp(record))
+            }
         }
         .ok_or("Missing timestamp")?;
 
@@ -44,7 +54,10 @@ impl Format {
 
     pub fn message_from_bytes<'a>(&self, record: &'a [u8]) -> Option<&'a [u8]> {
         match self {
-            Format::Plain => crate::format::plain::message(record),
+            Format::Plain => {
+                crate::format::plain::message(record)
+                    .or_else(|| crate::format::csv::message(record))
+            }
             Format::Csv => crate::format::csv::message(record),
         }
     }
@@ -52,28 +65,38 @@ impl Format {
     pub fn host_from_bytes<'a>(&self, record: &'a [u8]) -> Option<&'a [u8]> {
         match self {
             Format::Csv => crate::format::csv::host(record),
-            Format::Plain => extract_after_needle(record, b"host="),
+            Format::Plain => {
+                extract_after_needle(record, b"host=")
+                    .or_else(|| crate::format::csv::host(record))
+            }
         }
     }
 
     pub fn user_from_bytes<'a>(&self, record: &'a [u8]) -> Option<&'a [u8]> {
         match self {
             Format::Csv => crate::format::csv::user(record),
-            Format::Plain => extract_after_needle(record, b"user="),
+            Format::Plain => {
+                extract_after_needle(record, b"user=")
+                    .or_else(|| crate::format::csv::user(record))
+            }
         }
     }
 
     pub fn db_from_bytes<'a>(&self, record: &'a [u8]) -> Option<&'a [u8]> {
         match self {
             Format::Csv => crate::format::csv::db(record),
-            Format::Plain => extract_after_needle(record, b"database="),
+            Format::Plain => {
+                extract_after_needle(record, b"database=")
+                    .or_else(|| crate::format::csv::db(record))
+            }
         }
     }
 
     pub fn appname_from_bytes<'a>(&self, record: &'a [u8]) -> Option<&'a [u8]> {
         match self {
             Format::Csv => crate::format::csv::appname(record),
-            Format::Plain => extract_after_needle(record, b"application_name="),
+            Format::Plain => extract_after_needle(record, b"application_name=")
+                .or_else(|| crate::format::csv::appname(record)),
         }
     }
 }

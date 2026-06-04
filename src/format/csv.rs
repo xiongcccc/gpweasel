@@ -1,14 +1,12 @@
 use crate::severity::Severity;
 
 const POSTGRES_SEVERITY_FIELD: usize = 12;
-const POSTGRES_MESSAGE_FIELD: usize = 14;
 const POSTGRES_USER_FIELD: usize = 2;
 const POSTGRES_DB_FIELD: usize = 3;
 const POSTGRES_HOST_FIELD: usize = 5;
 const POSTGRES_APP_FIELD: usize = 22;
 
 const GREENPLUM_SEVERITY_FIELD: usize = 17;
-const GREENPLUM_MESSAGE_FIELD: usize = 19;
 const GREENPLUM_USER_FIELD: usize = 2;
 const GREENPLUM_DB_FIELD: usize = 3;
 const GREENPLUM_HOST_FIELD: usize = 6;
@@ -24,11 +22,7 @@ pub fn severity(record: &[u8]) -> Severity {
 }
 
 pub fn message(record: &[u8]) -> Option<&[u8]> {
-    if is_greenplum_record(record) {
-        field(record, GREENPLUM_MESSAGE_FIELD)
-    } else {
-        field(record, POSTGRES_MESSAGE_FIELD)
-    }
+    severity_field_index(record).and_then(|idx| field(record, idx + 2))
 }
 
 pub fn host(record: &[u8]) -> Option<&[u8]> {
@@ -64,17 +58,19 @@ pub fn appname(record: &[u8]) -> Option<&[u8]> {
 }
 
 fn severity_field(record: &[u8]) -> Option<&[u8]> {
-    let greenplum_severity = field(record, GREENPLUM_SEVERITY_FIELD);
-    if greenplum_severity.is_some_and(is_severity) {
-        return greenplum_severity;
+    severity_field_index(record).and_then(|idx| field(record, idx))
+}
+
+fn severity_field_index(record: &[u8]) -> Option<usize> {
+    if field(record, GREENPLUM_SEVERITY_FIELD).is_some_and(is_severity) {
+        return Some(GREENPLUM_SEVERITY_FIELD);
     }
 
-    let postgres_severity = field(record, POSTGRES_SEVERITY_FIELD);
-    if postgres_severity.is_some_and(is_severity) {
-        return postgres_severity;
+    if field(record, POSTGRES_SEVERITY_FIELD).is_some_and(is_severity) {
+        return Some(POSTGRES_SEVERITY_FIELD);
     }
 
-    None
+    (1..=32).find(|idx| field(record, *idx).is_some_and(is_severity))
 }
 
 fn is_greenplum_record(record: &[u8]) -> bool {

@@ -1,6 +1,6 @@
 use clap::{ValueEnum, builder::PossibleValue};
 
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Hash)]
 pub enum Severity {
     Debug5,
     Debug4,

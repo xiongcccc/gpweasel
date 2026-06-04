@@ -62,7 +62,18 @@ pub fn cli() -> Command {
         .subcommand(
             Command::new("peaks")
                 .about("Show the \"busiest\" time periods with most log events")
+                .arg(arg!(--bucket <INTERVAL>)
+                    .short('b')
+                    .help("Interval for peak buckets, e.g. 1m, 10m, 1h. Defaults to 10m")
+                    .value_parser(value_parser!(String))
+                    .default_value("10m"))
+                .arg(arg!(--max <MAX>)
+                    .short('m')
+                    .help("Max number of buckets to show (default 20)")
+                    .value_parser(value_parser!(usize))
+                    .default_value("20"))
                 .args_conflicts_with_subcommands(true)
+                .args(filelist_args())
         )
         .subcommand(
             Command::new("slow")
