@@ -87,24 +87,26 @@ git clone ssh://git@ssh.github.com:443/xiongcccc/gpweasel.git
 
 For full validation and useful production diagnostics, these settings are recommended:
 
-```sql
-ALTER SYSTEM SET log_destination = 'csvlog';
-ALTER SYSTEM SET logging_collector = on;
-ALTER SYSTEM SET log_directory = 'log';
-ALTER SYSTEM SET log_filename = 'gpdb-%Y-%m-%d_%H%M%S.csv';
+```sh
+gpconfig -c log_destination -v csvlog
+gpconfig -c logging_collector -v on
+gpconfig -c log_directory -v log
+gpconfig -c log_filename -v 'gpdb-%Y-%m-%d_%H%M%S.csv'
 
-ALTER SYSTEM SET log_connections = on;
-ALTER SYSTEM SET log_disconnections = on;
-ALTER SYSTEM SET log_min_duration_statement = 500;
-ALTER SYSTEM SET log_lock_waits = on;
-ALTER SYSTEM SET deadlock_timeout = '1s';
+gpconfig -c log_connections -v on
+gpconfig -c log_disconnections -v on
+gpconfig -c log_min_duration_statement -v 500
+gpconfig -c log_lock_waits -v on
+gpconfig -c deadlock_timeout -v 1s
 
-SELECT pg_reload_conf();
+gpstop -u
 ```
 
 Notes:
 
-* `logging_collector` usually requires a database restart if it was previously `off`.
+* Run `gpconfig` as the Greenplum/YMatrix administration user, for example `gpadmin` or `mxadmin`.
+* `gpstop -u` reloads parameters that can be applied without a restart.
+* `logging_collector` usually requires a database restart if it was previously `off`; use a planned maintenance window, for example `gpstop -ra`.
 * `log_min_duration_statement = 0` is useful for short tests, but too noisy for normal production use.
 * `log_connections` and `log_disconnections` are required for meaningful `connections` output.
 * `log_lock_waits` plus a reasonable `deadlock_timeout` is required for lock-wait analysis.
@@ -400,10 +402,10 @@ process 2544911 still waiting for AccessShareLock ...
 
 Required logging:
 
-```sql
-ALTER SYSTEM SET log_lock_waits = on;
-ALTER SYSTEM SET deadlock_timeout = '1s';
-SELECT pg_reload_conf();
+```sh
+gpconfig -c log_lock_waits -v on
+gpconfig -c deadlock_timeout -v 1s
+gpstop -u
 ```
 
 ### connections
@@ -417,10 +419,10 @@ gpweasel --mask "2026-06-03 18:06" connections $MASTER_DATA_DIRECTORY/log/*
 
 Required logging:
 
-```sql
-ALTER SYSTEM SET log_connections = on;
-ALTER SYSTEM SET log_disconnections = on;
-SELECT pg_reload_conf();
+```sh
+gpconfig -c log_connections -v on
+gpconfig -c log_disconnections -v on
+gpstop -u
 ```
 
 Use cases:
@@ -584,6 +586,13 @@ gpweasel --mask "YYYY-MM-DD HH:MM" stats $MASTER_DATA_DIRECTORY/log/*
 
 Check:
 
+```sh
+gpconfig -s log_connections
+gpconfig -s log_disconnections
+```
+
+You can also verify what the current session sees in `psql`:
+
 ```sql
 SHOW log_connections;
 SHOW log_disconnections;
@@ -595,6 +604,13 @@ Both should normally be `on`.
 
 Check:
 
+```sh
+gpconfig -s log_lock_waits
+gpconfig -s deadlock_timeout
+```
+
+You can also verify in `psql`:
+
 ```sql
 SHOW log_lock_waits;
 SHOW deadlock_timeout;
@@ -605,6 +621,12 @@ Lock waits are logged only after `deadlock_timeout`.
 ### No `slow` Output
 
 Check:
+
+```sh
+gpconfig -s log_min_duration_statement
+```
+
+You can also verify in `psql`:
 
 ```sql
 SHOW log_min_duration_statement;

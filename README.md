@@ -87,24 +87,26 @@ git clone ssh://git@ssh.github.com:443/xiongcccc/gpweasel.git
 
 为了完整验证和获得更有价值的生产诊断信息，建议开启这些参数：
 
-```sql
-ALTER SYSTEM SET log_destination = 'csvlog';
-ALTER SYSTEM SET logging_collector = on;
-ALTER SYSTEM SET log_directory = 'log';
-ALTER SYSTEM SET log_filename = 'gpdb-%Y-%m-%d_%H%M%S.csv';
+```sh
+gpconfig -c log_destination -v csvlog
+gpconfig -c logging_collector -v on
+gpconfig -c log_directory -v log
+gpconfig -c log_filename -v 'gpdb-%Y-%m-%d_%H%M%S.csv'
 
-ALTER SYSTEM SET log_connections = on;
-ALTER SYSTEM SET log_disconnections = on;
-ALTER SYSTEM SET log_min_duration_statement = 500;
-ALTER SYSTEM SET log_lock_waits = on;
-ALTER SYSTEM SET deadlock_timeout = '1s';
+gpconfig -c log_connections -v on
+gpconfig -c log_disconnections -v on
+gpconfig -c log_min_duration_statement -v 500
+gpconfig -c log_lock_waits -v on
+gpconfig -c deadlock_timeout -v 1s
 
-SELECT pg_reload_conf();
+gpstop -u
 ```
 
 说明：
 
-* `logging_collector` 如果之前是 `off`，通常需要重启数据库才会生效。
+* `gpconfig` 需要在 Greenplum/YMatrix 管理用户下执行，例如 `gpadmin` 或 `mxadmin`。
+* `gpstop -u` 用于 reload 可热加载的参数。
+* `logging_collector` 如果之前是 `off`，通常需要数据库重启才会生效；请在维护窗口执行计划内重启，例如 `gpstop -ra`。
 * `log_min_duration_statement = 0` 适合短时间测试，但生产环境会非常吵，不建议长期打开。
 * `log_connections` 和 `log_disconnections` 是 `connections` 命令有意义输出的前提。
 * `log_lock_waits` 配合合适的 `deadlock_timeout`，才能看到锁等待类日志。
@@ -400,10 +402,10 @@ process 2544911 still waiting for AccessShareLock ...
 
 前提参数：
 
-```sql
-ALTER SYSTEM SET log_lock_waits = on;
-ALTER SYSTEM SET deadlock_timeout = '1s';
-SELECT pg_reload_conf();
+```sh
+gpconfig -c log_lock_waits -v on
+gpconfig -c deadlock_timeout -v 1s
+gpstop -u
 ```
 
 ### connections
@@ -417,10 +419,10 @@ gpweasel --mask "2026-06-03 18:06" connections $MASTER_DATA_DIRECTORY/log/*
 
 前提参数：
 
-```sql
-ALTER SYSTEM SET log_connections = on;
-ALTER SYSTEM SET log_disconnections = on;
-SELECT pg_reload_conf();
+```sh
+gpconfig -c log_connections -v on
+gpconfig -c log_disconnections -v on
+gpstop -u
 ```
 
 适用场景：
@@ -584,6 +586,13 @@ gpweasel --mask "YYYY-MM-DD HH:MM" stats $MASTER_DATA_DIRECTORY/log/*
 
 检查：
 
+```sh
+gpconfig -s log_connections
+gpconfig -s log_disconnections
+```
+
+也可以在 `psql` 中确认当前会话看到的值：
+
 ```sql
 SHOW log_connections;
 SHOW log_disconnections;
@@ -595,6 +604,13 @@ SHOW log_disconnections;
 
 检查：
 
+```sh
+gpconfig -s log_lock_waits
+gpconfig -s deadlock_timeout
+```
+
+也可以在 `psql` 中确认：
+
 ```sql
 SHOW log_lock_waits;
 SHOW deadlock_timeout;
@@ -605,6 +621,12 @@ SHOW deadlock_timeout;
 ### slow 没有输出
 
 检查：
+
+```sh
+gpconfig -s log_min_duration_statement
+```
+
+也可以在 `psql` 中确认：
 
 ```sql
 SHOW log_min_duration_statement;
